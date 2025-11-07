@@ -6,7 +6,6 @@ from mpl_toolkits.mplot3d import Axes3D
 
 # Función Objetivo
 def f(x):
-    """Función objetivo"""
     return (np.exp(x[0]) + 1)*(x[1]**2 + 1) - np.sin(x[0] + x[1]**2) - x[0]
 
 # Vector Gradiente
@@ -16,57 +15,87 @@ def grad_f(x):
     df_dy = 2*x[1]*(np.exp(x[0]) + 1) - 2*x[1]*np.cos(x[0] + x[1]**2)
     return np.array([df_dx, df_dy])
 
-# Hessiano (NOTA: h12  = h21)
+# Hessiano 
 def hess_f(x):
-    """Hessiano de f"""
     h11 = np.exp(x[0])*(x[1]**2 + 1) + np.sin(x[0] + x[1]**2)
     h22 = 2*(np.exp(x[0]) + 1) - 2*np.cos(x[0] + x[1]**2) + 4*x[1]**2*np.sin(x[0] + x[1]**2)
     h12 = 2*x[1]*np.exp(x[0]) + 2*x[1]*np.sin(x[0] + x[1]**2)
     return np.array([[h11, h12], [h12, h22]])
 
-# ---------------------------------------------------
-# Método de Región de Confianza
-# ---------------------------------------------------
 
+# Método de Región de Confianza
 def trust_region_method(x0, grad_f, hess_f, delta0=1.0, eta=0.15, tol=1e-6, max_iter=1000):
+    
+    # x0: punto inicial
+    # grad_f: función que calcula el gradiente
+    # hess_f: función que calcula el Hessiano
+    # delta0: radio inicial de la región de confianza
+    # eta: umbral para aceptar el paso (0 < eta < 1)
+    # tol: tolerancia para criterio de parada
+    # max_iter: número máximo de iteraciones
+
     x = np.array(x0, dtype=float)
-    delta = delta0
-    history = [x.copy()]
+    delta = delta0 #radio region de confianza
+
+    history = [x.copy()] #almacenar historial de puntos
+
+
     for _ in range(max_iter):
+        # 1- Calcular gradiente y Hessiana
         g = grad_f(x)
         B = hess_f(x)
-        if np.linalg.norm(g) < tol:
+
+        if np.linalg.norm(g) < tol: # verificar gradiente es suficientemente pequeño
             break
+        # 2- Resolver el subproblema Region COnfianza
         try:
+            # Intentar calcular paso de Newton
             p_newton = -np.linalg.solve(B, g)
+
+            # Verificar paso de Newton está dentro de la Region de COnfianza
             if np.linalg.norm(p_newton) <= delta:
                 p = p_newton
             else:
-                p_cauchy = - (np.dot(g, g) / (np.dot(g, np.dot(B, g)) + 1e-12)) * g
+                #calcular paso Cauchy => dirección máximo descenso
+                p_cauchy = - (np.dot(g, g) / (np.dot(g, np.dot(B, g)) + 1e-12)) * g 
+
+                # Verificar si paso Cauchy dentro de la region de Confiaza
                 if np.linalg.norm(p_cauchy) > delta:
                     p = -delta * g / np.linalg.norm(g)
                 else:
-                    p = delta * p_newton / np.linalg.norm(p_newton)
+                    p = delta * p_newton / np.linalg.norm(p_newton) #USAR paso Cauchy truncado al borde de la REgion
         except np.linalg.LinAlgError:
+            # Hessiano Singular => usar dirección de descenso más pronunciado
             p = -delta * g / np.linalg.norm(g)
+
+        # 3- Evaluar calidad del Paso    
         f_actual = f(x)
+        # valor real funcion en el nuevo paso
         f_new = f(x + p)
+
+
+        # Aproximacion Taylor 2do Orden (Modelo Cuadrático)
         m_new = f_actual + np.dot(g, p) + 0.5*np.dot(p, np.dot(B, p))
+        # Razon de Reducción: reducción real / reduccion predicha
         rho = (f_actual - f_new) / (f_actual - m_new + 1e-12)
+        
+        # 4- Ajustar radio region de confianza
         if rho < 0.25:
-            delta *= 0.25
+            delta *= 0.25 # Reducir la region de cofianza
         elif rho > 0.75:
-            delta = min(2*delta, 10)
+            delta = min(2*delta, 10) # expandir region de confianza
+        
+        # 5- Decición de aceptar o no el PASO
         if rho > eta:
-            x = x + p
+            x = x + p # PASO ACEPTADO => moverse al nuevo punto
             history.append(x.copy())
+        # PASO MUY GRANDE => PARAR    
         if np.linalg.norm(p) < tol:
             break
     return x, history
 
 
 # Método ARC (Regularización Adaptativa Cúbica)
-
 def arc_method(x0, grad_f, hess_f, sigma0=1.0, tol=1e-6, max_iter=1000):
     x = np.array(x0, dtype=float)
     sigma = sigma0
@@ -96,10 +125,8 @@ def arc_method(x0, grad_f, hess_f, sigma0=1.0, tol=1e-6, max_iter=1000):
             break
     return x, history
 
-# ---------------------------------------------------
-# Ejecutar los métodos
-# ---------------------------------------------------
 
+# Ejecución Métodos
 np.random.seed(42)
 x0 = np.random.uniform(-2, 2, size=2)
 print("Punto inicial:", x0)
@@ -111,10 +138,8 @@ x_arc, hist_arc = arc_method(x0, grad_f, hess_f)
 print("Óptimo Región de Confianza:", x_tr, "f(x) =", f(x_tr))
 print("Óptimo ARC:", x_arc, "f(x) =", f(x_arc))
 
-# ---------------------------------------------------
-# Crear malla vectorizada
-# ---------------------------------------------------
 
+# Crear malla vectorizada
 x_range = np.linspace(-2, 2, 200)
 y_range = np.linspace(-2, 2, 200)
 X, Y = np.meshgrid(x_range, y_range)
@@ -126,9 +151,9 @@ hist_arc_arr = np.array(hist_arc)
 f_tr = np.array([f(x) for x in hist_tr])
 f_arc = np.array([f(x) for x in hist_arc])
 
-# ---------------------------------------------------
-# Gráficos mejorados (estilo del documento)
-# ---------------------------------------------------
+
+
+# GRAFICOS
 
 # Crear figura con subplots
 fig = plt.figure(figsize=(18, 6))
