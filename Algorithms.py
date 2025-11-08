@@ -181,97 +181,134 @@ f_arc = np.array([f(x) for x in hist_arc])
 
 
 
-# GRAFICOS
+# GRAFICOS 2D - Primero solo los gráficos
 
-# Crear figura con subplots
-fig = plt.figure(figsize=(18, 6))
+# Crear figura solo para gráficos
+fig_graphs = plt.figure(figsize=(12, 5))
 
-# 1. Gráfico 3D (mejorado)
-ax1 = fig.add_subplot(131, projection='3d')
-# Superficie con colormap invertido (como en el documento)
-surf = ax1.plot_surface(X, Y, Z, cmap=cm.coolwarm_r, alpha=0.8, 
-                       linewidth=0, antialiased=True, rstride=2, cstride=2)
-
-# Trayectorias más destacadas
-ax1.plot(hist_tr_arr[:,0], hist_tr_arr[:,1], f_tr, 'o-', 
-         color='red', linewidth=2.5, markersize=6, markerfacecolor='darkred', 
-         markeredgecolor='black', markeredgewidth=0.5, label='Región de Confianza')
-
-ax1.plot(hist_arc_arr[:,0], hist_arc_arr[:,1], f_arc, 's-', 
-         color='blue', linewidth=2.5, markersize=6, markerfacecolor='darkblue', 
-         markeredgecolor='black', markeredgewidth=0.5, label='ARC')
-
-# Puntos importantes más grandes
-ax1.scatter([x0[0]], [x0[1]], [f(x0)], color='green', s=150, 
-           marker='*', edgecolor='black', linewidth=1, label='Punto Inicial', zorder=5)
-ax1.scatter([x_tr[0]], [x_tr[1]], [f(x_tr)], color='red', s=150, 
-           marker='*', edgecolor='black', linewidth=1, label='Óptimo TR', zorder=5)
-ax1.scatter([x_arc[0]], [x_arc[1]], [f(x_arc)], color='blue', s=150, 
-           marker='*', edgecolor='black', linewidth=1, label='Óptimo ARC', zorder=5)
-
-ax1.set_xlabel('x', fontsize=12, fontweight='bold')
-ax1.set_ylabel('y', fontsize=12, fontweight='bold')
-ax1.set_zlabel('f(x,y)', fontsize=12, fontweight='bold')
-ax1.set_title('Superficie 3D y Trayectorias de Optimización', fontsize=14, fontweight='bold')
-ax1.legend(fontsize=10)
-ax1.grid(True, alpha=0.3)
-
-# 2. Vista 2D (contornos)
-ax2 = fig.add_subplot(132)
+# 1. Vista 2D 
+ax1 = fig_graphs.add_subplot(121)
 # Contornos con más niveles y colormap invertido
-contour = ax2.contour(X, Y, Z, 30, cmap=cm.coolwarm_r, alpha=0.7)
-ax2.clabel(contour, inline=True, fontsize=8)
+contour = ax1.contour(X, Y, Z, 30, cmap=cm.coolwarm_r, alpha=0.7)
+ax1.clabel(contour, inline=True, fontsize=8)
 
 # Trayectorias 2D
-ax2.plot(hist_tr_arr[:,0], hist_tr_arr[:,1], 'o-', color='red', linewidth=2, 
+ax1.plot(hist_tr_arr[:,0], hist_tr_arr[:,1], 'o-', color='red', linewidth=2, 
          markersize=6, markerfacecolor='darkred', markeredgecolor='black', 
          markeredgewidth=0.5, label='Región de Confianza')
-ax2.plot(hist_arc_arr[:,0], hist_arc_arr[:,1], 's-', color='blue', linewidth=2, 
+ax1.plot(hist_arc_arr[:,0], hist_arc_arr[:,1], 's-', color='blue', linewidth=2, 
          markersize=6, markerfacecolor='darkblue', markeredgecolor='black', 
          markeredgewidth=0.5, label='ARC')
 
 # Puntos importantes
-ax2.scatter([x0[0]], [x0[1]], color='green', s=150, marker='*', 
+ax1.scatter([x0[0]], [x0[1]], color='green', s=150, marker='*', 
            edgecolor='black', linewidth=1, label='Punto Inicial', zorder=5)
-ax2.scatter([x_tr[0]], [x_tr[1]], color='red', s=150, marker='*', 
+ax1.scatter([x_tr[0]], [x_tr[1]], color='red', s=150, marker='*', 
            edgecolor='black', linewidth=1, label='Óptimo TR', zorder=5)
-ax2.scatter([x_arc[0]], [x_arc[1]], color='blue', s=150, marker='*', 
+ax1.scatter([x_arc[0]], [x_arc[1]], color='blue', s=150, marker='*', 
            edgecolor='black', linewidth=1, label='Óptimo ARC', zorder=5)
 
-ax2.set_xlabel('x', fontsize=12, fontweight='bold')
-ax2.set_ylabel('y', fontsize=12, fontweight='bold')
-ax2.set_title('Trayectorias (Vista Superior)', fontsize=14, fontweight='bold')
-ax2.legend(fontsize=10)
-ax2.grid(True, alpha=0.7)
-ax2.set_aspect('equal')
+ax1.set_xlabel('x', fontsize=12, fontweight='bold')
+ax1.set_ylabel('y', fontsize=12, fontweight='bold')
+ax1.set_title('Trayectorias de Optimización', fontsize=14, fontweight='bold')
+ax1.legend(fontsize=10)
+ax1.grid(True, alpha=0.7)
+ax1.set_aspect('equal')
 
-# 3. Gráfico de convergencia (mejorado)
-ax3 = fig.add_subplot(133)
+# 2. Gráfico de convergencia
+ax2 = fig_graphs.add_subplot(122)
 f_min = min(f_tr[-1], f_arc[-1])
 
-# Líneas más gruesas y marcadores
-ax3.semilogy(np.arange(len(f_tr)), f_tr - f_min, 'o-', color='red', linewidth=2.5,
+ax2.semilogy(np.arange(len(f_tr)), f_tr - f_min, 'o-', color='red', linewidth=2.5,
              markersize=6, markerfacecolor='darkred', markeredgecolor='black',
              markeredgewidth=0.5, label='Región de Confianza')
-ax3.semilogy(np.arange(len(f_arc)), f_arc - f_min, 's-', color='blue', linewidth=2.5,
+ax2.semilogy(np.arange(len(f_arc)), f_arc - f_min, 's-', color='blue', linewidth=2.5,
              markersize=6, markerfacecolor='darkblue', markeredgecolor='black',
              markeredgewidth=0.5, label='ARC')
 
-ax3.set_xlabel('Iteración', fontsize=12, fontweight='bold')
-ax3.set_ylabel('f(x) - f*', fontsize=12, fontweight='bold')
-ax3.set_title('Convergencia de la Función Objetivo', fontsize=14, fontweight='bold')
-ax3.legend(fontsize=10)
-ax3.grid(True, alpha=0.7)
+ax2.set_xlabel('Iteración', fontsize=12, fontweight='bold')
+ax2.set_ylabel('f(x) - f*', fontsize=12, fontweight='bold')
+ax2.set_title('Convergencia de la Función Objetivo', fontsize=14, fontweight='bold')
+ax2.legend(fontsize=10)
+ax2.grid(True, alpha=0.7)
 
-# Ajustar layout y mostrar
+# Ajustar layout y mostrar gráficos
 plt.tight_layout()
 plt.show()
 
-# ---------------------------------------------------
-# Información adicional de convergencia
-# ---------------------------------------------------
+# TABLA VISUAL - Figura separada
+fig_table = plt.figure(figsize=(10, 4))
+ax_table = fig_table.add_subplot(111)
+ax_table.axis('tight')
+ax_table.axis('off')
 
+# Calcular métricas adicionales
+norm_grad_tr = np.linalg.norm(grad_f(x_tr))
+norm_grad_arc = np.linalg.norm(grad_f(x_arc))
+path_length_tr = np.sum(np.linalg.norm(np.diff(hist_tr_arr, axis=0), axis=1))
+path_length_arc = np.sum(np.linalg.norm(np.diff(hist_arc_arr, axis=0), axis=1))
+
+# Datos para la tabla
+table_data = [
+    ['Métrica', 'Región de Confianza', 'ARC'],
+    ['Iteraciones', f'{len(hist_tr)}', f'{len(hist_arc)}'],
+    ['f(x) final', f'{f_tr[-1]:.6e}', f'{f_arc[-1]:.6e}'],
+    ['||∇f(x)|| final', f'{norm_grad_tr:.2e}', f'{norm_grad_arc:.2e}'],
+    ['Longitud trayectoria', f'{path_length_tr:.4f}', f'{path_length_arc:.4f}'],
+    ['Punto óptimo', f'({x_tr[0]:.4f}, {x_tr[1]:.4f})', f'({x_arc[0]:.4f}, {x_arc[1]:.4f})']
+]
+
+# Crear tabla
+table = ax_table.table(cellText=table_data, 
+                      cellLoc='center', 
+                      loc='center',
+                      colWidths=[0.3, 0.35, 0.35])
+
+# Estilo de la tabla
+table.auto_set_font_size(False)
+table.set_fontsize(11)
+table.scale(1, 1.8)
+
+# Colores y estilo de celdas
+for i, key in enumerate(table.get_celld().keys()):
+    cell = table.get_celld()[key]
+    if key[0] == 0:  # Encabezado
+        cell.set_facecolor('#4B8BBE')
+        cell.set_text_props(weight='bold', color='white', size=12)
+    elif key[0] % 2 == 1:  # Filas impares
+        cell.set_facecolor('#F9F9F9')
+    else:  # Filas pares
+        cell.set_facecolor('#FFFFFF')
+    
+    # Negrita para la primera columna (nombres de métricas)
+    if key[1] == 0 and key[0] > 0:
+        cell.set_text_props(weight='bold')
+
+# Título de la tabla
+ax_table.set_title('COMPARACIÓN DE ALGORITMOS DE OPTIMIZACIÓN', 
+                  fontsize=16, fontweight='bold', pad=20)
+
+# Ajustar layout y mostrar tabla
+plt.tight_layout()
+plt.show()
+
+# Información adicional de convergencia
 print(f"\n--- Estadísticas de Convergencia ---")
+print(f"Punto inicial: ({x0[0]:.4f}, {x0[1]:.4f}) | f(x0) = {f(x0):.6e}")
 print(f"Región de Confianza: {len(hist_tr)} iteraciones, f final = {f_tr[-1]:.6e}")
 print(f"ARC: {len(hist_arc)} iteraciones, f final = {f_arc[-1]:.6e}")
 print(f"Diferencia entre métodos: {abs(f_tr[-1] - f_arc[-1]):.2e}")
+
+# Análisis comparativo
+print(f"\n--- Análisis Comparativo ---")
+if abs(f_tr[-1] - f_arc[-1]) < 1e-8:
+    print("✅ Ambos métodos convergen esencialmente al mismo valor óptimo")
+elif f_tr[-1] < f_arc[-1]:
+    print("🏆 Región de Confianza encuentra una solución ligeramente mejor")
+else:
+    print("🏆 ARC encuentra una solución ligeramente mejor")
+
+if len(hist_tr) < len(hist_arc):
+    print(f"⚡ Región de Confianza es {len(hist_arc)/len(hist_tr):.1f}x más rápido")
+else:
+    print(f"⚡ ARC es {len(hist_tr)/len(hist_arc):.1f}x más rápido")
