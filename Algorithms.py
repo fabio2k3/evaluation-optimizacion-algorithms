@@ -300,15 +300,15 @@ print(f"ARC: {len(hist_arc)} iteraciones, f final = {f_arc[-1]:.6e}")
 print(f"Diferencia entre métodos: {abs(f_tr[-1] - f_arc[-1]):.2e}")
 
 # Análisis comparativo
-print(f"\n--- Análisis Comparativo ---")
+print(f"\n*** Análisis Comparativo ***")
 if abs(f_tr[-1] - f_arc[-1]) < 1e-8:
-    print("✅ Ambos métodos convergen esencialmente al mismo valor óptimo")
+    print("Ambos métodos convergen esencialmente al mismo valor óptimo")
 elif f_tr[-1] < f_arc[-1]:
-    print("🏆 Región de Confianza encuentra una solución ligeramente mejor")
+    print("Región de Confianza encuentra una solución ligeramente mejor")
 else:
-    print("🏆 ARC encuentra una solución ligeramente mejor")
+    print("ARC encuentra una solución ligeramente mejor")
 
 if len(hist_tr) < len(hist_arc):
-    print(f"⚡ Región de Confianza es {len(hist_arc)/len(hist_tr):.1f}x más rápido")
+    print(f"Región de Confianza es {len(hist_arc)/len(hist_tr):.1f}x más rápido")
 else:
-    print(f"⚡ ARC es {len(hist_tr)/len(hist_arc):.1f}x más rápido")
+    print(f"ARC es {len(hist_tr)/len(hist_arc):.1f}x más rápido")
