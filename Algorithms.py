@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
-from mpl_toolkits.mplot3d import Axes3D
+
 
 
 # Función Objetivo
@@ -178,7 +178,6 @@ hist_tr_arr = np.array(hist_tr)
 hist_arc_arr = np.array(hist_arc)
 f_tr = np.array([f(x) for x in hist_tr])
 f_arc = np.array([f(x) for x in hist_arc])
-
 
 
 # GRAFICOS 2D - Primero solo los gráficos
