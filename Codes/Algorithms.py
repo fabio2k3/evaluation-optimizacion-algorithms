@@ -173,9 +173,9 @@ for rmin, rmax in rangos:
         "f_arc": np.array([f(x) for x in hist_arc])
     })
 
-# -------------------------------
-# GRAFICAR SOLO CASO [-2,2]
-# -------------------------------
+
+
+# GRAFICAR [-2,2]
 
 res = resultados[0]
 x0, x_tr, x_arc = res["x0"], res["x_tr"], res["x_arc"]
@@ -189,11 +189,11 @@ y_range = np.linspace(-2, 2, 200)
 X, Y = np.meshgrid(x_range, y_range)
 Z = np.vectorize(lambda x, y: f([x, y]))(X, Y)
 
-# GRAFICOS 2D - Primero solo los gráficos
+# GRAFICOS 2D 
 
 fig_graphs = plt.figure(figsize=(12, 5))
 
-# 1. Vista 2D 
+# Vista 2D 
 ax1 = fig_graphs.add_subplot(121)
 contour = ax1.contour(X, Y, Z, 30, cmap=cm.coolwarm_r, alpha=0.7)
 ax1.clabel(contour, inline=True, fontsize=8)
@@ -221,7 +221,7 @@ ax1.legend(fontsize=10)
 ax1.grid(True, alpha=0.7)
 ax1.set_aspect('equal')
 
-# 2. Gráfico de convergencia
+# Gráfico de convergencia
 ax2 = fig_graphs.add_subplot(122)
 f_min = min(f_tr[-1], f_arc[-1])
 

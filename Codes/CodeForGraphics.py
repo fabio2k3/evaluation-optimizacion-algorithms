@@ -22,43 +22,71 @@ def hess_f(x):
 
 # Método de Región de Confianza
 def trust_region_method(x0, grad_f, hess_f, delta0=1.0, eta=0.15, tol=1e-6, max_iter=1000):
+    
+    # x0: punto inicial
+    # grad_f: función que calcula el gradiente
+    # hess_f: función que calcula el Hessiano
+    # delta0: radio inicial de la región de confianza
+    # eta: umbral para aceptar el paso (0 < eta < 1)
+    # tol: tolerancia para criterio de parada
+    # max_iter: número máximo de iteraciones
+
     x = np.array(x0, dtype=float)
-    delta = delta0 # radio region de confianza
-    history = [x.copy()] # almacenar historial de puntos
+    delta = delta0 #radio region de confianza
+
+    history = [x.copy()] #almacenar historial de puntos
+
 
     for _ in range(max_iter):
+        # 1- Calcular gradiente y Hessiana
         g = grad_f(x)
         B = hess_f(x)
 
-        if np.linalg.norm(g) < tol:
+        if np.linalg.norm(g) < tol: # verificar gradiente es suficientemente pequeño
             break
+        # 2- Resolver el subproblema Region COnfianza
         try:
+            # Intentar calcular paso de Newton
             p_newton = -np.linalg.solve(B, g)
+
+            # Verificar paso de Newton está dentro de la Region de COnfianza
             if np.linalg.norm(p_newton) <= delta:
                 p = p_newton
             else:
+                #calcular paso Cauchy => dirección máximo descenso
                 p_cauchy = - (np.dot(g, g) / (np.dot(g, np.dot(B, g)) + 1e-12)) * g 
+
+                # Verificar si paso Cauchy dentro de la region de Confiaza
                 if np.linalg.norm(p_cauchy) > delta:
                     p = -delta * g / np.linalg.norm(g)
                 else:
-                    p = delta * p_newton / np.linalg.norm(p_newton)
+                    p = delta * p_newton / np.linalg.norm(p_newton) #USAR paso Cauchy truncado al borde de la REgion
         except np.linalg.LinAlgError:
+            # Hessiano Singular => usar dirección de descenso más pronunciado
             p = -delta * g / np.linalg.norm(g)
 
+        # 3- Evaluar calidad del Paso    
         f_actual = f(x)
+        # valor real funcion en el nuevo paso
         f_new = f(x + p)
+
+
+        # Aproximacion Taylor 2do Orden (Modelo Cuadrático)
         m_new = f_actual + np.dot(g, p) + 0.5*np.dot(p, np.dot(B, p))
+        # Razon de Reducción: reducción real / reduccion predicha
         rho = (f_actual - f_new) / (f_actual - m_new + 1e-12)
-
+        
+        # 4- Ajustar radio region de confianza
         if rho < 0.25:
-            delta *= 0.25
+            delta *= 0.25 # Reducir la region de cofianza
         elif rho > 0.75:
-            delta = min(2*delta, 10)
-
+            delta = min(2*delta, 10) # expandir region de confianza
+        
+        # 5- Decición de aceptar o no el PASO
         if rho > eta:
-            x = x + p
+            x = x + p # PASO ACEPTADO => moverse al nuevo punto
             history.append(x.copy())
-
+        # PASO MUY GRANDE => PARAR    
         if np.linalg.norm(p) < tol:
             break
     return x, history
@@ -66,44 +94,65 @@ def trust_region_method(x0, grad_f, hess_f, delta0=1.0, eta=0.15, tol=1e-6, max_
 
 # Método ARC (Regularización Adaptativa Cúbica)
 def arc_method(x0, grad_f, hess_f, sigma0=1.0, tol=1e-6, max_iter=1000):
+    
+    # x0: punto inicial
+    # grad_f: función que calcula el gradiente
+    # hess_f: función que calcula el Hessiano  
+    # sigma0: parámetro de regularización inicial
+    # tol: tolerancia para criterio de parada
+    # max_iter: número máximo de iteraciones
+
     x = np.array(x0, dtype=float)
     sigma = sigma0 # Parametro Regulacion Cubica
-    history = [x.copy()] # Historial de puntos
+    history = [x.copy()] # Hiatorial puntos
+
 
     for _ in range(max_iter):
+        # 1- Calcular gradiente & Hessiano en el punto Actual
         g = grad_f(x)
         B = hess_f(x)
 
+        # Verificar si el gradiente es suficientemente pequeño
         if np.linalg.norm(g) < tol:
             break
+        # 2- Resolver Subproblema regularizador Cubico
         try:
+            # Calcular paso => (B + sigma*I)p = -g
             p = -np.linalg.solve(B + sigma*np.eye(len(x)), g)
         except np.linalg.LinAlgError:
-            p = -g / (np.linalg.norm(g) + 1e-12)
+            p = -g / (np.linalg.norm(g) + 1e-12) # Problemas Numericos => usar direccion descenso mas pronunciado
         
+        # 3- Evaluar calidad del paso
         f_actual = f(x)
-        f_new = f(x + p)
+        f_new = f(x + p)  # valor real de la funcion en el nuevo punto 
         p_norm = np.linalg.norm(p)
+
+        # Taylor 2do orden + térmico cúbico (Modelo Cúbico)
         m_new = f_actual + np.dot(g, p) + 0.5*np.dot(p, np.dot(B, p)) + (sigma/3)*p_norm**3
+
+        # Calcular razón de reducción => reducción real / reducción predicha
         rho = (f_actual - f_new) / (f_actual - m_new + 1e-12)
 
+        # 4- Ajustar parametro regularizacion
         if rho < 0.25:
-            sigma *= 2
+            sigma *= 2 # aumentar regularizacion => pasos más conservadores
         elif rho > 0.75:
-            sigma = max(sigma/2, 1e-8)
+            sigma = max(sigma/2, 1e-8) # disminuir regularizacion
         
+        # 5- Decision acpetar o NO el paso-
         if rho > 1e-4:
+            # Paso aceptado => moverse al nuevo punto
             x = x + p
             history.append(x.copy())
 
+        # paso muy pequeño => PARAR     
         if np.linalg.norm(p) < tol:
             break
     return x, history
 
 
-# ========================
-# PRUEBAS EN TRES RANGOS
-# ========================
+
+# RANGOS
 rangos = [[-2, 2], [-10, 10], [-100, 100]]
 
 for r in rangos:
