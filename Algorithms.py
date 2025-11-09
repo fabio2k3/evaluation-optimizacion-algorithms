@@ -2,15 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 
-
-
 # Función Objetivo
 def f(x):
     return (np.exp(x[0]) + 1)*(x[1]**2 + 1) - np.sin(x[0] + x[1]**2) - x[0]
 
 # Vector Gradiente
 def grad_f(x):
-    
     df_dx = np.exp(x[0])*(x[1]**2 + 1) - np.cos(x[0] + x[1]**2) - 1
     df_dy = 2*x[1]*(np.exp(x[0]) + 1) - 2*x[1]*np.cos(x[0] + x[1]**2)
     return np.array([df_dx, df_dy])
@@ -154,18 +151,37 @@ def arc_method(x0, grad_f, hess_f, sigma0=1.0, tol=1e-6, max_iter=1000):
     return x, history
 
 
-# Ejecución Métodos
-np.random.seed(42)
-x0 = np.random.uniform(-2, 2, size=2)
-print("Punto inicial:", x0)
-print("f(x0) =", f(x0))
 
-x_tr, hist_tr = trust_region_method(x0, grad_f, hess_f)
-x_arc, hist_arc = arc_method(x0, grad_f, hess_f)
+# EJECUCIÓN EN TRES RANGOS
 
-print("Óptimo Región de Confianza:", x_tr, "f(x) =", f(x_tr))
-print("Óptimo ARC:", x_arc, "f(x) =", f(x_arc))
+rangos = [(-2, 2), (-10, 10), (-100, 100)]
+resultados = []
 
+for rmin, rmax in rangos:
+    np.random.seed(42)
+    x0 = np.random.uniform(rmin, rmax, size=2)
+    x_tr, hist_tr = trust_region_method(x0, grad_f, hess_f)
+    x_arc, hist_arc = arc_method(x0, grad_f, hess_f)
+    resultados.append({
+        "rango": f"[{rmin}, {rmax}]",
+        "x0": x0,
+        "x_tr": x_tr,
+        "x_arc": x_arc,
+        "hist_tr": hist_tr,
+        "hist_arc": hist_arc,
+        "f_tr": np.array([f(x) for x in hist_tr]),
+        "f_arc": np.array([f(x) for x in hist_arc])
+    })
+
+# -------------------------------
+# GRAFICAR SOLO CASO [-2,2]
+# -------------------------------
+
+res = resultados[0]
+x0, x_tr, x_arc = res["x0"], res["x_tr"], res["x_arc"]
+hist_tr_arr = np.array(res["hist_tr"])
+hist_arc_arr = np.array(res["hist_arc"])
+f_tr, f_arc = res["f_tr"], res["f_arc"]
 
 # Crear malla vectorizada
 x_range = np.linspace(-2, 2, 200)
@@ -173,21 +189,12 @@ y_range = np.linspace(-2, 2, 200)
 X, Y = np.meshgrid(x_range, y_range)
 Z = np.vectorize(lambda x, y: f([x, y]))(X, Y)
 
-# Historiales como arrays
-hist_tr_arr = np.array(hist_tr)
-hist_arc_arr = np.array(hist_arc)
-f_tr = np.array([f(x) for x in hist_tr])
-f_arc = np.array([f(x) for x in hist_arc])
-
-
 # GRAFICOS 2D - Primero solo los gráficos
 
-# Crear figura solo para gráficos
 fig_graphs = plt.figure(figsize=(12, 5))
 
 # 1. Vista 2D 
 ax1 = fig_graphs.add_subplot(121)
-# Contornos con más niveles y colormap invertido
 contour = ax1.contour(X, Y, Z, 30, cmap=cm.coolwarm_r, alpha=0.7)
 ax1.clabel(contour, inline=True, fontsize=8)
 
@@ -209,7 +216,7 @@ ax1.scatter([x_arc[0]], [x_arc[1]], color='blue', s=150, marker='*',
 
 ax1.set_xlabel('x', fontsize=12, fontweight='bold')
 ax1.set_ylabel('y', fontsize=12, fontweight='bold')
-ax1.set_title('Trayectorias de Optimización', fontsize=14, fontweight='bold')
+ax1.set_title('Trayectorias de Optimización [-2,2]', fontsize=14, fontweight='bold')
 ax1.legend(fontsize=10)
 ax1.grid(True, alpha=0.7)
 ax1.set_aspect('equal')
@@ -227,87 +234,50 @@ ax2.semilogy(np.arange(len(f_arc)), f_arc - f_min, 's-', color='blue', linewidth
 
 ax2.set_xlabel('Iteración', fontsize=12, fontweight='bold')
 ax2.set_ylabel('f(x) - f*', fontsize=12, fontweight='bold')
-ax2.set_title('Convergencia de la Función Objetivo', fontsize=14, fontweight='bold')
+ax2.set_title('Convergencia de la Función Objetivo [-2,2]', fontsize=14, fontweight='bold')
 ax2.legend(fontsize=10)
 ax2.grid(True, alpha=0.7)
 
-# Ajustar layout y mostrar gráficos
 plt.tight_layout()
 plt.show()
 
-# TABLA VISUAL - Figura separada
-fig_table = plt.figure(figsize=(10, 4))
+
+# TABLA COMPARATIVA (3 RANGOS)
+
+fig_table = plt.figure(figsize=(11, 4))
 ax_table = fig_table.add_subplot(111)
 ax_table.axis('tight')
 ax_table.axis('off')
 
-# Calcular métricas adicionales
-norm_grad_tr = np.linalg.norm(grad_f(x_tr))
-norm_grad_arc = np.linalg.norm(grad_f(x_arc))
-path_length_tr = np.sum(np.linalg.norm(np.diff(hist_tr_arr, axis=0), axis=1))
-path_length_arc = np.sum(np.linalg.norm(np.diff(hist_arc_arr, axis=0), axis=1))
+# Datos de la tabla
+table_data = [['Rango', 'Método', 'Iteraciones', 'f(x) final', '||∇f(x)|| final', 'Punto óptimo']]
 
-# Datos para la tabla
-table_data = [
-    ['Métrica', 'Región de Confianza', 'ARC'],
-    ['Iteraciones', f'{len(hist_tr)}', f'{len(hist_arc)}'],
-    ['f(x) final', f'{f_tr[-1]:.6e}', f'{f_arc[-1]:.6e}'],
-    ['||∇f(x)|| final', f'{norm_grad_tr:.2e}', f'{norm_grad_arc:.2e}'],
-    ['Longitud trayectoria', f'{path_length_tr:.4f}', f'{path_length_arc:.4f}'],
-    ['Punto óptimo', f'({x_tr[0]:.4f}, {x_tr[1]:.4f})', f'({x_arc[0]:.4f}, {x_arc[1]:.4f})']
-]
+for res in resultados:
+    for metodo, hist, fx, xopt in [
+        ('Región de Confianza', res['hist_tr'], res['f_tr'], res['x_tr']),
+        ('ARC', res['hist_arc'], res['f_arc'], res['x_arc'])
+    ]:
+        table_data.append([
+            res['rango'],
+            metodo,
+            len(hist),
+            f"{fx[-1]:.6e}",
+            f"{np.linalg.norm(grad_f(xopt)):.2e}",
+            f"({xopt[0]:.4f}, {xopt[1]:.4f})"
+        ])
 
 # Crear tabla
-table = ax_table.table(cellText=table_data, 
-                      cellLoc='center', 
-                      loc='center',
-                      colWidths=[0.3, 0.35, 0.35])
-
-# Estilo de la tabla
+table = ax_table.table(cellText=table_data, cellLoc='center', loc='center')
 table.auto_set_font_size(False)
-table.set_fontsize(11)
-table.scale(1, 1.8)
+table.set_fontsize(10)
+table.scale(1, 1.5)
 
-# Colores y estilo de celdas
 for i, key in enumerate(table.get_celld().keys()):
     cell = table.get_celld()[key]
-    if key[0] == 0:  # Encabezado
+    if key[0] == 0:
         cell.set_facecolor('#4B8BBE')
-        cell.set_text_props(weight='bold', color='white', size=12)
-    elif key[0] % 2 == 1:  # Filas impares
-        cell.set_facecolor('#F9F9F9')
-    else:  # Filas pares
-        cell.set_facecolor('#FFFFFF')
-    
-    # Negrita para la primera columna (nombres de métricas)
-    if key[1] == 0 and key[0] > 0:
-        cell.set_text_props(weight='bold')
+        cell.set_text_props(weight='bold', color='white')
 
-# Título de la tabla
-ax_table.set_title('COMPARACIÓN DE ALGORITMOS DE OPTIMIZACIÓN', 
-                  fontsize=16, fontweight='bold', pad=20)
-
-# Ajustar layout y mostrar tabla
+ax_table.set_title('COMPARACIÓN DE ALGORITMOS EN DIFERENTES RANGOS', fontsize=14, fontweight='bold')
 plt.tight_layout()
 plt.show()
-
-# Información adicional de convergencia
-print(f"\n--- Estadísticas de Convergencia ---")
-print(f"Punto inicial: ({x0[0]:.4f}, {x0[1]:.4f}) | f(x0) = {f(x0):.6e}")
-print(f"Región de Confianza: {len(hist_tr)} iteraciones, f final = {f_tr[-1]:.6e}")
-print(f"ARC: {len(hist_arc)} iteraciones, f final = {f_arc[-1]:.6e}")
-print(f"Diferencia entre métodos: {abs(f_tr[-1] - f_arc[-1]):.2e}")
-
-# Análisis comparativo
-print(f"\n*** Análisis Comparativo ***")
-if abs(f_tr[-1] - f_arc[-1]) < 1e-8:
-    print("Ambos métodos convergen esencialmente al mismo valor óptimo")
-elif f_tr[-1] < f_arc[-1]:
-    print("Región de Confianza encuentra una solución ligeramente mejor")
-else:
-    print("ARC encuentra una solución ligeramente mejor")
-
-if len(hist_tr) < len(hist_arc):
-    print(f"Región de Confianza es {len(hist_arc)/len(hist_tr):.1f}x más rápido")
-else:
-    print(f"ARC es {len(hist_tr)/len(hist_arc):.1f}x más rápido")
