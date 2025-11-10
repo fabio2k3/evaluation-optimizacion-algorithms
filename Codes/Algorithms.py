@@ -173,6 +173,126 @@ for rmin, rmax in rangos:
         "f_arc": np.array([f(x) for x in hist_arc])
     })
 
+# *** EXPORTACION A JSON ***
+import json
+import os
+import numpy as np
+from datetime import datetime
+
+# Función para convertir arrays de numpy a tipos nativos de Python para JSON
+def convert_to_serializable(obj):
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    return obj
+
+# Exportar resultados a JSON
+def export_results_to_json(resultados, filename=None):
+    # Si no se especifica filename, crear uno automáticamente en la raíz
+    if filename is None:
+        # Subir dos niveles desde Codes/ para llegar a la raíz del proyecto
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        filename = os.path.join(project_root, "Result.json")
+    
+    # Preparar datos en formato de tabla para fácil comparación
+    tabla_comparativa = []
+    
+    for res in resultados:
+        # Datos para TR
+        tabla_comparativa.append({
+            "rango": res["rango"],
+            "metodo": "Región de Confianza",
+            "iteraciones": len(res["hist_tr"]),
+            "f_x_final": float(res["f_tr"][-1]),
+            "norma_gradiente_final": float(np.linalg.norm(grad_f(res["x_tr"]))),
+            "punto_optimo": convert_to_serializable(res["x_tr"])
+        })
+        
+        # Datos para ARC
+        tabla_comparativa.append({
+            "rango": res["rango"],
+            "metodo": "ARC",
+            "iteraciones": len(res["hist_arc"]),
+            "f_x_final": float(res["f_arc"][-1]),
+            "norma_gradiente_final": float(np.linalg.norm(grad_f(res["x_arc"]))),
+            "punto_optimo": convert_to_serializable(res["x_arc"])
+        })
+    
+    # Crear estructura completa del resultado
+    export_data = {
+        "metadata": {
+            "timestamp": datetime.now().isoformat(),
+            "funcion_objetivo": "f(x) = (exp(x) + 1)*(y² + 1) - sin(x + y²) - x",
+            "algoritmos": ["Trust Region", "ARC"],
+            "rangos_evaluados": [str(rango) for rango in rangos],
+            "total_resultados": len(tabla_comparativa)
+        },
+        "tabla_comparativa": tabla_comparativa,
+        "datos_completos": {
+            "resultados_detallados": [
+                {
+                    "rango": res["rango"],
+                    "punto_inicial": convert_to_serializable(res["x0"]),
+                    "trust_region": {
+                        "punto_optimo": convert_to_serializable(res["x_tr"]),
+                        "historial_iteraciones": convert_to_serializable(np.array(res["hist_tr"])),
+                        "valores_funcion": convert_to_serializable(res["f_tr"]),
+                        "iteraciones_totales": len(res["hist_tr"]),
+                        "valor_final": float(res["f_tr"][-1]),
+                        "norma_gradiente_final": float(np.linalg.norm(grad_f(res["x_tr"])))
+                    },
+                    "arc": {
+                        "punto_optimo": convert_to_serializable(res["x_arc"]),
+                        "historial_iteraciones": convert_to_serializable(np.array(res["hist_arc"])),
+                        "valores_funcion": convert_to_serializable(res["f_arc"]),
+                        "iteraciones_totales": len(res["hist_arc"]),
+                        "valor_final": float(res["f_arc"][-1]),
+                        "norma_gradiente_final": float(np.linalg.norm(grad_f(res["x_arc"])))
+                    }
+                }
+                for res in resultados
+            ]
+        }
+    }
+    
+    # Exportar a JSON
+    try:
+        # Crear directorio si no existe
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        
+        with open(filename, 'w', encoding='utf-8') as f:
+            json.dump(export_data, f, indent=2, ensure_ascii=False, default=convert_to_serializable)
+        
+        # Verificación
+        file_path = os.path.abspath(filename)
+        print(f"✅ Resultados exportados exitosamente a: {file_path}")
+        print(f"📊 Estructura del archivo:")
+        print(f"   - Metadatos de ejecución")
+        print(f"   - Tabla comparativa ({len(tabla_comparativa)} registros)")
+        print(f"   - Datos completos ({len(resultados)} rangos con información detallada)")
+        
+        # Verificar que el archivo se creó
+        if os.path.exists(file_path):
+            file_size = os.path.getsize(file_path)
+            print(f"📏 Tamaño del archivo: {file_size} bytes")
+        else:
+            print(f"❌ El archivo no se creó en la ruta esperada")
+            
+    except Exception as e:
+        print(f"❌ Error al exportar resultados: {e}")
+        import traceback
+        traceback.print_exc()
+
+# LLAMAR LA FUNCIÓN DE EXPORTACIÓN DESDE Algorithms.py
+# Opción 1: Ruta manual explícita
+# export_results_to_json(resultados, "../../Result.json")
+
+# Opción 2: Detección automática (RECOMENDADA)
+export_results_to_json(resultados)
+# *** FIN JSON ***
 
 
 # GRAFICAR [-2,2]
