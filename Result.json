@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "timestamp": "2025-11-09T21:32:28.043102",
+    "timestamp": "2025-11-10T09:09:23.215279",
     "funcion_objetivo": "f(x) = (exp(x) + 1)*(y² + 1) - sin(x + y²) - x",
     "algoritmos": [
       "Trust Region",

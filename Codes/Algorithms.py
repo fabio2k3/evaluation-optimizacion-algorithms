@@ -266,31 +266,12 @@ def export_results_to_json(resultados, filename=None):
         with open(filename, 'w', encoding='utf-8') as f:
             json.dump(export_data, f, indent=2, ensure_ascii=False, default=convert_to_serializable)
         
-        # Verificación
-        file_path = os.path.abspath(filename)
-        print(f"✅ Resultados exportados exitosamente a: {file_path}")
-        print(f"📊 Estructura del archivo:")
-        print(f"   - Metadatos de ejecución")
-        print(f"   - Tabla comparativa ({len(tabla_comparativa)} registros)")
-        print(f"   - Datos completos ({len(resultados)} rangos con información detallada)")
-        
-        # Verificar que el archivo se creó
-        if os.path.exists(file_path):
-            file_size = os.path.getsize(file_path)
-            print(f"📏 Tamaño del archivo: {file_size} bytes")
-        else:
-            print(f"❌ El archivo no se creó en la ruta esperada")
-            
+                 
     except Exception as e:
-        print(f"❌ Error al exportar resultados: {e}")
+        print(f"Error al exportar resultados: {e}")
         import traceback
         traceback.print_exc()
 
-# LLAMAR LA FUNCIÓN DE EXPORTACIÓN DESDE Algorithms.py
-# Opción 1: Ruta manual explícita
-# export_results_to_json(resultados, "../../Result.json")
-
-# Opción 2: Detección automática (RECOMENDADA)
 export_results_to_json(resultados)
 # *** FIN JSON ***
 
